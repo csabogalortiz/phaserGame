@@ -3,17 +3,18 @@ import StateMachine from "~/statemachine/StateMachine";
 import { sharedInstance as events } from "./EventCenter";
 import ObstaclesController from "./ObstaclesController";
 
+
 export default class SnowmanController {
 
+    private scene: Phaser.Scene
     private sprite: Phaser.Physics.Matter.Sprite
     private stateMachine: StateMachine
     private moveTime = 0
 
-
-
-    constructor(sprite: Phaser.Physics.Matter.Sprite) {
-
+    constructor(scene: Phaser.Scene, sprite: Phaser.Physics.Matter.Sprite) {
+        this.scene = scene
         this.sprite = sprite
+
         this.createAnimations()
         this.stateMachine = new StateMachine(this, 'snowman')
 
@@ -35,6 +36,11 @@ export default class SnowmanController {
             .addState('dead')
             .setState('idle')
 
+        events.on('snowman-stomped', this.handleStomped, this)
+
+    }
+    destroy() {
+        events.off('snowman-stomped', this.handleStomped, this)
     }
 
     update(dt: number) {
@@ -42,6 +48,7 @@ export default class SnowmanController {
     }
 
     private createAnimations() {
+
         this.sprite.anims.create({
             key: 'idle',
             frames: [{
@@ -66,7 +73,7 @@ export default class SnowmanController {
             frames: this.sprite.anims.generateFrameNames('snowman', {
                 start: 1,
                 end: 2,
-                prefix: 'right',
+                prefix: 'snowman_right_',
                 suffix: '.png'
             }),
             frameRate: 5,
@@ -113,6 +120,26 @@ export default class SnowmanController {
             this.stateMachine.setState('move-left')
 
         }
+
+    }
+
+    private handleStomped(snowman: Phaser.Physics.Matter.Sprite) {
+
+        if (this.sprite !== snowman) {
+            return
+        }
+        events.off('snowman-stomped', this.handleStomped, this)
+        this.stateMachine.setState('dead')
+
+        this.scene?.tweens.add({
+            targets: this.sprite,
+            displayHeight: 0,
+            y: this.sprite.y + (this.sprite.displayHeight * 0.5),
+            duration: 200,
+            onComplete: () => {
+                this.sprite.destroy()
+            }
+        })
 
     }
 

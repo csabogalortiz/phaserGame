@@ -51,6 +51,10 @@ export default class PlayerController {
             .addState('snowman-hit', {
                 onEnter: this.snowmanHitOnEnter
             })
+            .addState('snowman-stomp', {
+                onEnter: this.snowmanStopmOnEnter
+            })
+
             .setState('idle')
 
         // el set state to set the initial state of the state machine.
@@ -69,6 +73,8 @@ export default class PlayerController {
                 this.lastSnowman = body.gameObject
 
                 if (this.sprite.y < body.position.y) {
+
+                    this.stateMachine.setState('snowman-stomp')
 
                 } else {
                     this.stateMachine.setState('snowman-hit')
@@ -134,6 +140,9 @@ export default class PlayerController {
 
     }
 
+
+    // ***************************** Handling States ********************
+
     private walkOnEnter() {
         this.sprite.play('player-walk')
 
@@ -182,6 +191,9 @@ export default class PlayerController {
             this.sprite.setVelocityX(speed)
         }
     }
+
+
+    // **** Spike
     private spikeHitOnEnter() {
         this.sprite.setVelocityY(-12);
         this.health = Phaser.Math.Clamp(this.health - 10, 0, 100)
@@ -215,14 +227,20 @@ export default class PlayerController {
                 this.sprite.setTint(color)
             }
         })
-
-
-
-
         this.stateMachine.setState('idle')
 
     }
 
+
+    // *** Snowman
+
+    private snowmanStopmOnEnter() {
+        this.sprite.setVelocity(-10)
+        events.emit('snowman-stomped', this.lastSnowman)
+        this.stateMachine.setState('idle')
+
+
+    }
     private snowmanHitOnEnter() {
         if (this.lastSnowman) {
             if (this.sprite.x < this.lastSnowman.x) {
@@ -231,7 +249,37 @@ export default class PlayerController {
             else {
                 this.sprite.setVelocity(20)
             }
+        } else {
+            this.sprite.setVelocityY(-20)
         }
+
+        const startColor = Phaser.Display.Color.ValueToColor(0xffffff)
+        const endColor = Phaser.Display.Color.ValueToColor(0x454CFF)
+        this.scene.tweens.addCounter({
+            from: 0,
+            to: 100,
+            duration: 100,
+            repeat: 2,
+            yoyo: true,
+            ease: Phaser.Math.Easing.Sine.InOut,
+            onUpdate: tween => {
+                const value = tween.getValue()
+                const colorObject = Phaser.Display.Color.Interpolate.ColorWithColor(
+                    startColor,
+                    endColor,
+                    100,
+                    value
+                )
+                const color = Phaser.Display.Color.GetColor(
+                    colorObject.r,
+                    colorObject.g,
+                    colorObject.b,
+
+                )
+                this.sprite.setTint(color)
+            }
+        })
+        this.stateMachine.setState('idle')
 
 
     }

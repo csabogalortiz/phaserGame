@@ -70,7 +70,7 @@ export default class Game extends Phaser.Scene {
                     {
                         const snowman = this.matter.add.sprite(x, y, 'snowman')
                             .setFixedRotation();
-                        this.snowmen.push(new SnowmanController(snowman))
+                        this.snowmen.push(new SnowmanController(this, snowman))
                         this.obstacles.add('snowman', snowman.body as MatterJS.BodyType)
 
                         break
