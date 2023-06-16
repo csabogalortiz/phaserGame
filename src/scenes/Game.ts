@@ -21,6 +21,10 @@ export default class Game extends Phaser.Scene {
         this.obstacles = new ObstaclesController()
         this.snowmen = []
 
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.destroy()
+        })
+
     }
 
     preload() {
@@ -39,6 +43,7 @@ export default class Game extends Phaser.Scene {
         const map = this.make.tilemap({ key: 'tilemap' });
         const tileset = map.addTilesetImage('iceworld', 'tiles');
         const ground = map.createLayer('ground', tileset);
+        ground.debugShowBody = false;
         ground.setCollisionByProperty({ collides: true });
         map.createLayer('obstacles', tileset)
 
@@ -61,7 +66,7 @@ export default class Game extends Phaser.Scene {
                             this.cursors,
                             this.obstacles)
 
-                        this.cameras.main.startFollow(this.penguin!);
+                        this.cameras.main.startFollow(this.penguin, true);
                         // this.matter.add.sprite(x, y - 50, 'star')
                         break
 
@@ -108,6 +113,11 @@ export default class Game extends Phaser.Scene {
         this.cameras.main.startFollow(this.penguin!);
         this.matter.world.convertTilemapLayer(ground);
 
+    }
+
+    destroy() {
+        this.scene.stop('ui')
+        this.snowmen.forEach(snowman => snowman.destroy())
     }
 
     update(t: number, dt: number) {

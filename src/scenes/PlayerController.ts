@@ -55,6 +55,10 @@ export default class PlayerController {
                 onEnter: this.snowmanStopmOnEnter
             })
 
+            .addState('dead', {
+                onEnter: this.deadOnEnter
+            })
+
             .setState('idle')
 
         // el set state to set the initial state of the state machine.
@@ -119,6 +123,20 @@ export default class PlayerController {
 
     }
 
+    private setHealth(value: number) {
+
+        this.health = Phaser.Math.Clamp(value, 0, 100)
+        events.emit('health-changed', this.health)
+
+        // Falta: Check for death 
+
+        if (this.health <= 0) {
+            this.stateMachine.setState('dead')
+        }
+
+
+    }
+
 
     update(dt: number) {
         this.stateMachine.update(dt)
@@ -176,7 +194,7 @@ export default class PlayerController {
     }
 
     private jumpOnEnter() {
-        this.sprite.setVelocityY(-12);
+        this.sprite.setVelocityY(-30);
 
     }
     private jumpOnUpdate() {
@@ -192,12 +210,20 @@ export default class PlayerController {
         }
     }
 
+    private deadOnEnter() {
+        this.sprite.play('player-death')
+        this.sprite.setOnCollide(() => { })
+        this.scene.time.delayedCall(1800, () => {
+            this.scene.scene.start('game-over')
+
+        })
+
+    }
+
 
     // **** Spike
     private spikeHitOnEnter() {
         this.sprite.setVelocityY(-12);
-        this.health = Phaser.Math.Clamp(this.health - 10, 0, 100)
-        events.emit('health-changed', this.health)
 
         console.log(this.health)
 
@@ -228,6 +254,8 @@ export default class PlayerController {
             }
         })
         this.stateMachine.setState('idle')
+
+        this.setHealth(this.health - 10)
 
     }
 
@@ -280,6 +308,7 @@ export default class PlayerController {
             }
         })
         this.stateMachine.setState('idle')
+        this.setHealth(this.health - 20)
 
 
     }
@@ -301,6 +330,18 @@ export default class PlayerController {
             }),
             repeat: -1
         });
+
+        this.sprite.anims.create({
+            key: 'player-death',
+            frameRate: 10,
+            frames: this.sprite.anims.generateFrameNames('penguin', {
+                start: 1,
+                end: 4,
+                prefix: 'penguin_die0',
+                suffix: '.png'
+            }),
+        })
+
     }
 }
 
